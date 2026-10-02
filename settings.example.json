@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python /absolute/path/to/stop_hook_full_path.py",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

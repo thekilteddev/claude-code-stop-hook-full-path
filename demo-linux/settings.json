@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3 /hook/stop_hook_full_path.py" }
+        ]
+      }
+    ]
+  }
+}
