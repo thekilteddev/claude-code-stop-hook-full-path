@@ -34,7 +34,7 @@ It works best with a line in `CLAUDE.md` such as `Always give absolute paths, ne
 
 ## The three mistakes from the video
 
-1. **A silent failure on Windows (byte order mark).** In Windows PowerShell 5.1, once the pipe encoding is UTF-8 (`$OutputEncoding = [System.Text.Encoding]::UTF8`), the first bytes Python reads from a piped file are `EF BB BF`, not `7B 22` (`{"`). `json.loads` fails on them, and a hook that catches that error and exits cleanly looks fine while it never blocks anything. Stock PowerShell 5.1 pipes plain ASCII and does not show this. In my test the UTF-8 pipe sent the mark **twice** (`EF BB BF EF BB BF`), and Python's `utf-8-sig` codec strips only one, so this hook strips every leading `U+FEFF` itself. Try it in `demo-bom/`:
+1. **A silent failure on Windows (byte order mark).** In Windows PowerShell 5.1, once the pipe encoding is UTF-8 (`$OutputEncoding = [System.Text.Encoding]::UTF8`), the first bytes Python reads from a piped file are `EF BB BF`, not `7B 22` (`{"`). `json.loads` fails on them, and a hook that catches that error and exits cleanly looks fine while it never blocks anything. Whether you see it depends on the setup. In my interactive recording the default pipe sent plain bytes and the UTF-8 setting added the mark. In a non-interactive `powershell.exe -NoProfile -File` run on the same machine, the default pipe already sent it once and the UTF-8 setting sent it **twice** (`EF BB BF EF BB BF`). Python's `utf-8-sig` codec strips only one, so this hook strips every leading `U+FEFF` itself. Run `peek.py` to see what your own pipe sends. Try it in `demo-bom/`:
    ```powershell
    $OutputEncoding = [System.Text.Encoding]::UTF8
    Get-Content payload.json | python peek.py            # the bytes Python receives
