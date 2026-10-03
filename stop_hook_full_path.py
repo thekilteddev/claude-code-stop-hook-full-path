@@ -44,7 +44,7 @@ def decision(payload):
 def load(raw):
     # Strip EVERY leading byte order mark: a UTF-8 pipe from Windows PowerShell can send two,
     # and the "utf-8-sig" codec removes only one.
-    return json.loads(raw.decode("utf-8").lstrip("﻿"))
+    return json.loads(raw.decode("utf-8").lstrip("\ufeff"))
 
 
 def selftest():

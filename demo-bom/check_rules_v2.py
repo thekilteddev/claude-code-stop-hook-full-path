@@ -1,7 +1,8 @@
 import json, re, sys
 
-# The fix: strip the byte order mark (EF BB BF, which Python decodes as U+FEFF) before parsing.
-raw = sys.stdin.read().lstrip("﻿")
+# Read bytes, decode as UTF-8, then strip every leading byte order mark (EF BB BF, U+FEFF).
+# sys.stdin.read() would decode a Windows pipe with the system code page, where the mark is three other characters.
+raw = sys.stdin.buffer.read().decode("utf-8").lstrip("\ufeff")
 try:
     data = json.loads(raw)
 except Exception:
