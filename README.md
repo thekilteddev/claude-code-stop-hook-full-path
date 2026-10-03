@@ -34,7 +34,7 @@ It works best with a line in `CLAUDE.md` such as `Always give absolute paths, ne
 
 ## The three mistakes from the video
 
-1. **A silent failure on Windows (byte order mark).** In Windows PowerShell 5.1, once the pipe encoding is UTF-8 (`$OutputEncoding = [System.Text.Encoding]::UTF8`), the first bytes Python reads from a piped file are `EF BB BF`, not `7B 22` (`{"`). `json.loads` fails on them, and a hook that catches that error and exits cleanly looks fine while it never blocks anything. Whether you see it depends on the setup. In my interactive recording the default pipe sent plain bytes and the UTF-8 setting added the mark. In a non-interactive `powershell.exe -NoProfile -File` run on the same machine, the default pipe already sent it once and the UTF-8 setting sent it **twice** (`EF BB BF EF BB BF`). Python's `utf-8-sig` codec strips only one, so this hook strips every leading `U+FEFF` itself. Run `peek.py` to see what your own pipe sends. `check_rules_v2.py` reads bytes (`sys.stdin.buffer.read().decode("utf-8")`) rather than text, because Python decodes a Windows pipe with the system code page when `PYTHONIOENCODING` is not set: on my machine that is cp1252, where the mark arrives as three other characters and `lstrip` finds nothing to remove. Try it in `demo-bom/`:
+1. **A silent failure on Windows (byte order mark).** In Windows PowerShell 5.1, once the pipe encoding is UTF-8 (`$OutputEncoding = [System.Text.Encoding]::UTF8`), the first bytes Python reads from a piped file are `EF BB BF`, not `7B 22` (`{"`). `json.loads` fails on them, and a hook that catches that error and exits cleanly looks fine while it never blocks anything. Whether you see it depends on two settings, and each adds one mark. In Windows PowerShell 5.1 with a console whose input code page is 850, the default pipe sent `7B 22 68 6F 6F 6B 5F 65 76` and `check_rules_v1.py` blocked correctly. Setting `$OutputEncoding = [System.Text.Encoding]::UTF8` added one mark. A console whose input code page is 65001 (UTF-8) added one mark on its own, and with both set Python received it **twice** (`EF BB BF EF BB BF 7B 22`). I measured this in non-interactive `powershell.exe -NoProfile -File` runs, setting `[Console]::InputEncoding` inside the script; I did not test PowerShell 7. Python's `utf-8-sig` codec strips only one mark, so this hook strips every leading `U+FEFF` itself. Run `peek.py` to see what your own pipe sends. `check_rules_v2.py` reads bytes (`sys.stdin.buffer.read().decode("utf-8")`) rather than text, because Python decodes a Windows pipe with the system code page when `PYTHONIOENCODING` is not set: on my machine that is cp1252, where the mark arrives as three other characters and `lstrip` finds nothing to remove. Try it in `demo-bom/`:
    ```powershell
    $OutputEncoding = [System.Text.Encoding]::UTF8
    Get-Content payload.json | python peek.py            # the bytes Python receives
@@ -52,6 +52,7 @@ It works best with a line in `CLAUDE.md` such as `Always give absolute paths, ne
 
 - It checks the **last assistant message** only, not tool output.
 - A path without backticks is never flagged, so it only helps while Claude formats paths as code.
+- A path with a line number (`src/app.ts:12`) is not flagged, and a code span such as `python/3.11` is flagged although it is not a path.
 - macOS is untested.
 
 ## Licence

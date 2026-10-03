@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Claude Code Stop hook: when the last reply names a file by a short path, block it and ask for the full path.
 
-Works the same on Windows, macOS and Linux. Reads the Stop-hook JSON payload on stdin and prints
+Written for Windows, macOS and Linux; tested on Windows and Linux. Reads the Stop-hook JSON payload on stdin and prints
 {"decision": "block", "reason": ...} when a reply has a short path, nothing otherwise.
 Only paths inside backticks that end in a file extension are checked. A directory without an
 extension, or a path outside backticks, is not flagged.
@@ -11,7 +11,7 @@ import json
 import re
 import sys
 
-TICKS = re.compile(r"`([^`\n]{2,200})`")
+TICKS = re.compile(r"`([^`\n]{1,200})`")
 # absolute on Windows (C:\ or C:/), POSIX or UNC (leading / or \), home (~), or a URL
 ABSOLUTE = re.compile(r"^(?:[A-Za-z]:[\\/]|[\\/]|~|[a-zA-Z][a-zA-Z0-9+.\-]*://)")
 SEGMENT = re.compile(r"^[\w.\-{}, ]+$")  # braces and commas allowed: src/{a,b}.ts is one short path
@@ -55,6 +55,7 @@ def selftest():
         ("`C:\\proj\\episode\\clip-01.mp4`", False),
         ("`episode\\clip-01.mp4`", True),
         ("`src/{a,b}.ts`", True),
+        ("Press `q`, then open `src/a.ts` and `src/b.ts`.", True),  # a one-character code span must not break the pairing
         ("`./src/app.ts`", True),
         ("`~/proj/app.ts`", False),
         ("`clip-01.mp4`", False),
